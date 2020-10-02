@@ -37,6 +37,15 @@ python main.py --bit 4 \
 --max_epochs 250 >> logs/resnet18_w4a4-ceres-01.txt
 ```
 
+**Train W2A2 model. (DoreFa for weight, PACT for activation) **
+```shell
+mkdir logs
+python main.py --bit 2 \
+--log_name resnet18_w2a2-pact--ceres-01 \
+--arch resnet18 --wd 5e-4 \
+--max_epochs 250 >> logs/resnet18_w2a2-pact-ceres-01.txt
+```
+
 ## Results
 (Quantized models are trained from scratch.)
 
@@ -46,6 +55,7 @@ python main.py --bit 4 \
 | FP32  | 76.00 |
 | W4A4     |  76.20  |
 | W2A2      |    74.02 |
+| W2A2 (DoreFa+PACT)      |    74.81 |
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

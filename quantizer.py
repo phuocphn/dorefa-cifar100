@@ -67,6 +67,60 @@ class activation_quantize_fn(nn.Module):
     return "a_bit=%s"%(self.a_bit)
 
 
+class DirectQuant(torch.autograd.function.InplaceFunction):
+    @staticmethod
+    def forward(ctx, input, qmax, inplace=False):
+        ctx.inplace = inplace
+        if ctx.inplace:
+            ctx.mark_dirty(input)
+            output = input
+        else:
+            output = input.clone()
+        output = ((output * qmax).round()) / qmax
+        return output
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_input = grad_output
+        return grad_input, None, None
+
+class PACTClippingFunc(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input, clipping_value, bit):
+        ctx.save_for_backward(input, clipping_value)
+        x_tilder = torch.clamp(input, 0, clipping_value.data)
+        param_in = x_tilder / clipping_value
+        ctx.param_in = param_in
+
+        output = DirectQuant.apply(param_in, 2 ** bit -1)
+        ctx.output = output
+        return output * clipping_value
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, clipping_value, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad_clipping_value = grad_output.clone()
+        grad_input[input<0] = 0
+        grad_input[input>=clipping_value] = 0
+
+        grad_clipping_value[input<clipping_value] = 0
+        return grad_input, torch.sum(grad_clipping_value), None # correct version
+
+
+class pact_quantize_fn(nn.Module):
+    def __init__(self, init_alpha=8.0, a_bit=4):
+        super(pact_quantize_fn, self).__init__()
+        self.alpha = nn.Parameter(torch.tensor(init_alpha))
+        self.bit = a_bit
+
+    def forward(self, input):
+        return PACTClippingFunc.apply(input, self.alpha, self.bit)
+
+    def extra_repr(self):
+        return "bits=%s" % (self.bit)
+
+
 class DRF_QConv2d(nn.Conv2d):
   def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                padding=0, dilation=1, groups=1, bias=True, bit=4):
@@ -74,7 +128,7 @@ class DRF_QConv2d(nn.Conv2d):
                                    padding, dilation, groups, bias)
     self.bit = bit
     self.weight_quantize_fn = weight_quantize_fn(w_bit=bit)
-    self.activation_quantize_fn = activation_quantize_fn(a_bit = bit)
+    self.activation_quantize_fn = pact_quantize_fn(a_bit = bit)
 
   def forward(self, input, order=None):
     weight_q = self.weight_quantize_fn(self.weight)
@@ -90,7 +144,7 @@ class DRF_QLinear(nn.Linear):
     super(DRF_QLinear, self).__init__(in_features, out_features, bias)
     self.bit = bit
     self.weight_quantize_fn = weight_quantize_fn(w_bit=bit)
-    self.activation_quantize_fn = activation_quantize_fn(a_bit = bit)
+    self.activation_quantize_fn = pact_quantize_fn(a_bit = bit)
 
   def forward(self, input):
     weight_q = self.weight_quantize_fn(self.weight)
