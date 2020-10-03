@@ -139,7 +139,7 @@ class DRF_QConv2d(nn.Conv2d):
 
 
 class DRF_QLinear(nn.Linear):
-  def __init__(self, in_features, out_features, bias=True):
+  def __init__(self, in_features, out_features, bias=True, bit=4):
     
     super(DRF_QLinear, self).__init__(in_features, out_features, bias)
     self.bit = bit
