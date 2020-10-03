@@ -37,7 +37,7 @@ python main.py --bit 4 \
 --max_epochs 250 >> logs/resnet18_w4a4-ceres-01.txt
 ```
 
-**Train W2A2 model. (DoreFa for weight, PACT for activation) **
+**Train W2A2 model. (DoreFa for weight, PACT for activation)**
 ```shell
 mkdir logs
 python main.py --bit 2 \
@@ -56,6 +56,10 @@ python main.py --bit 2 \
 | W4A4     |  76.20  |
 | W2A2      |    74.02 |
 | W2A2 (DoreFa+PACT)      |    74.81 |
+| W2A2 (DoreFa+PACT)*      |    60.65 |
+
+Superscript (*) indicates the first and last layer are both quantized.
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
