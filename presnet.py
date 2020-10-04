@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from quantizer import *
+from functools import partial
 
 
 class PreActBlock_conv_Q(nn.Module):
@@ -10,8 +11,8 @@ class PreActBlock_conv_Q(nn.Module):
 
   def __init__(self, wbit, abit, in_planes, out_planes, stride=1):
     super(PreActBlock_conv_Q, self).__init__()
-    Conv2d = conv2d_Q_fn(w_bit=wbit)
-    self.act_q = activation_quantize_fn(a_bit=abit)
+    Conv2d = partial(DRF_QConv2d, bit=wbit)
+    # self.act_q = activation_quantize_fn(a_bit=abit)
 
     self.bn0 = nn.BatchNorm2d(in_planes)
     self.conv0 = Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -24,7 +25,7 @@ class PreActBlock_conv_Q(nn.Module):
       self.skip_bn = nn.BatchNorm2d(out_planes)
 
   def forward(self, x):
-    out = self.act_q(F.relu(self.bn0(x)))
+    out = F.relu(self.bn0(x))
 
     if self.skip_conv is not None:
       shortcut = self.skip_conv(out)
@@ -33,7 +34,7 @@ class PreActBlock_conv_Q(nn.Module):
       shortcut = x
 
     out = self.conv0(out)
-    out = self.act_q(F.relu(self.bn1(out)))
+    out = F.relu(self.bn1(out))
     out = self.conv1(out)
     out += shortcut
     return out
