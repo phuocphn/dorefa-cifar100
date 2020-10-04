@@ -46,6 +46,7 @@ python main.py --bit 4 \
 | FP32  | 76.00 |
 | W4A4     |  76.20  |
 | W2A2      |    74.02 |
+https://trello.com/c/8OfLH2nk/18-tab16-training-quantizable-dnns-scheme-with-dorefa-cifar100-implementation-%E2%9C%AA
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.hub import load_state_dict_from_url
 from quantizer import DRF_QConv2d, DRF_QLinear
+from quantizablednns_quantizer import QuantizableDNNS_QConv2d, QuantizableDNNS_QLinear
 from functools import partial
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
@@ -24,14 +25,14 @@ model_urls = {
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1, bit=4):
     """3x3 convolution with padding"""
-    Conv2d = partial(DRF_QConv2d, bit=bit)
+    Conv2d = partial(QuantizableDNNS_QConv2d, bit=bit)
     return Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
 def conv1x1(in_planes, out_planes, stride=1, bit=4):
     """1x1 convolution"""
-    Conv2d = partial(DRF_QConv2d, bit=bit)
+    Conv2d = partial(QuantizableDNNS_QConv2d, bit=bit)
     return Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
